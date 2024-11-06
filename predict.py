@@ -2,9 +2,10 @@ import tensorflow as tf
 import cv2
 import numpy as np
 import sys
-from main import image_size, classes
+from data_loader import image_size, classes
+import os
 
-# Đường dẫn lưu mô hình
+
 model_path = "models/emotion_detection_model.h5"
 
 # Load mô hình
@@ -25,13 +26,8 @@ def predict_emotion(image_path):
     predicted_class = np.argmax(predictions)
     emotion_label = classes[predicted_class]
     
-    # Kết quả dự đoán
+   
     print(f"Predicted Emotion: {emotion_label}")
 
-# Kiểm tra và lấy đường dẫn từ tham số dòng lệnh
 if __name__ == "__main__":
-    if len(sys.argv) < 2:
-        print("Usage: python predict.py <image_path>")
-    else:
-        image_path = sys.argv[1]
-        predict_emotion(image_path)
+        predict_emotion(os.path.join("happy.jpg"))

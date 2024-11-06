@@ -1,65 +1,60 @@
 import cv2
 import numpy as np
-import os
 import tensorflow as tf
-import random
 
-# Kiểm tra GPU và thiết lập cấu hình bộ nhớ
-gpus = tf.config.experimental.list_physical_devices('GPU')
-if gpus:
-    for gpu in gpus:
-        print(f"Using GPU: {gpu}")
-        tf.config.experimental.set_memory_growth(gpu, True)
-else:
-    print("No GPU found, using CPU.")
+# Tải mô hình đã huấn luyện
+model = tf.keras.models.load_model("models/emotion_detection_model.h5")
 
-# Đường dẫn dữ liệu và các nhãn lớp
-data_directory = 'data/train/'
-classes = ["anger", "contempt", "disgust", "fear", "happy", "neutral", "sad", "surprise"]
+# Đặt nhãn cảm xúc tương ứng với các lớp
+emotion_labels = ["Angry", "Disgust", "Fear", "Happy", "Sad", "Surprise", "Neutral", "Contempt"]
 
-# Giảm kích thước ảnh để tiết kiệm bộ nhớ
-image_size = 122  # Điều chỉnh kích thước ảnh
+# Khởi động webcam
+cap = cv2.VideoCapture(0)
 
-# Tạo danh sách dữ liệu huấn luyện
-training_data = []
+# Kích thước ảnh mô hình đầu vào
+image_size = 224  # Kích thước phải khớp với mô hình đã huấn luyện
 
-def create_training_data():
-    for category in classes:
-        path = os.path.join(data_directory, category)
-        if not os.path.exists(path):
-            print(f"Warning: Directory '{path}' does not exist.")
-            continue
-        class_num = classes.index(category)
-        for img in os.listdir(path):
-            try:
-                img_path = os.path.join(path, img)
-                img_array = cv2.imread(img_path)
-                if img_array is None:
-                    print(f"Warning: Unable to read image '{img_path}'. Skipping.")
-                    continue
-                # Resize ảnh và chuẩn hóa
-                new_array = cv2.resize(img_array, (image_size, image_size)).astype('float32') / 255.0
-                training_data.append([new_array, class_num])
-            except Exception as e:
-                print(f"Error processing image '{img_path}': {e}")
+def preprocess_image(frame):
+    # Chuyển ảnh về kích thước cần thiết và chuẩn hóa
+    frame_resized = cv2.resize(frame, (image_size, image_size))
+    frame_normalized = frame_resized / 255.0
+    frame_reshaped = np.reshape(frame_normalized, (1, image_size, image_size, 3))
+    return frame_reshaped
 
-# Gọi hàm tạo dữ liệu huấn luyện
-create_training_data()
+while True:
+    # Đọc khung hình từ camera
+    ret, frame = cap.read()
+    if not ret:
+        break
 
-# Hiển thị số lượng dữ liệu huấn luyện
-print(f"Number of training samples: {len(training_data)}")
-random.shuffle(training_data)
+    # Chuyển sang ảnh màu xám để phát hiện khuôn mặt
+    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
+    faces = face_cascade.detectMultiScale(gray, 1.3, 5)
 
-# Tách dữ liệu và nhãn
-X = []  # Dữ liệu hình ảnh
-Y = []  # Nhãn
+    for (x, y, w, h) in faces:
+        # Cắt khuôn mặt từ khung hình
+        face = frame[y:y+h, x:x+w]
+        face_input = preprocess_image(face)
 
-for features, label in training_data:
-    X.append(features)
-    Y.append(label)
+        # Dự đoán cảm xúc
+        predictions = model.predict(face_input)
+        emotion_index = np.argmax(predictions)
+        emotion_label = emotion_labels[emotion_index]
+        confidence = np.max(predictions)
 
-# Chuyển đổi sang numpy array
-X = np.array(X, dtype="float32").reshape(-1, image_size, image_size, 3)
-Y = np.array(Y, dtype="int32")
+        # Vẽ hình chữ nhật quanh khuôn mặt và nhãn cảm xúc
+        cv2.rectangle(frame, (x, y), (x+w, y+h), (255, 0, 0), 2)
+        cv2.putText(frame, f"{emotion_label} ({confidence*100:.2f}%)", (x, y-10), 
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2)
 
-print(f"X shape: {X.shape}, Y shape: {Y.shape}")
+    # Hiển thị khung hình
+    cv2.imshow("Emotion Detection", frame)
+
+    # Nhấn 'q' để thoát
+    if cv2.waitKey(1) & 0xFF == ord('q'):
+        break
+
+# Giải phóng tài nguyên
+cap.release()
+cv2.destroyAllWindows()

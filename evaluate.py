@@ -1,7 +1,7 @@
 import tensorflow as tf
 import numpy as np
 import os
-from main import image_size, classes
+from data_loader import image_size, classes
 from sklearn.metrics import classification_report, confusion_matrix
 
 # Đường dẫn lưu mô hình

@@ -1,6 +1,6 @@
 import tensorflow as tf
 from tensorflow.keras import layers, Model
-from main import X, Y, image_size  # Giả sử X, Y và image_size được định nghĩa trong main.py
+from data_loader import X, Y, image_size  # Giả sử X, Y và image_size được định nghĩa trong main.py
 
 # Cấu hình TensorFlow để cho phép tăng dần bộ nhớ GPU
 from tensorflow.compat.v1 import ConfigProto
