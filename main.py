@@ -1,51 +1,64 @@
 import cv2
 import numpy as np
-from matplotlib import pyplot as plt
-import tensorflow as tf
 import os
-from tensorflow.keras.models import Model
-from tensorflow.keras.layers import Input, Dense, Flatten, Conv2D, MaxPooling2D, Dropout
+import tensorflow as tf
+import random
 
+# Kiểm tra GPU
 gpus = tf.config.experimental.list_physical_devices('GPU')
 for gpu in gpus:
     print(f"gpu: {gpu}")
     tf.config.experimental.set_memory_growth(gpu, True)
 
+print("gpus:", gpus)
 
+# Đường dẫn dữ liệu và các nhãn lớp
+data_directory = 'data/train/'
+classes = ["anger", "contempt", "disgust", "fear", "happy", "neutral", "sad", "surprise"]
 
-data_directory = 'train/'
+# Giảm kích thước ảnh để tiết kiệm bộ nhớ
+image_size = 112  # Giảm từ 224 xuống 112
 
-classes = ["anger", "contempt", "disgust", "fear", "happy", "neutral", "sad", 'surprise']
-
-# for category in classes:
-#     path = os.path.join(data_directory, category)
-#     for img in os.listdir(path):
-#         img_array = cv2.imread(os.path.join(path, img))
-#         plt.imshow(cv2.cvtColor(img_array, cv2.COLOR_BGR2RGB))
-#         plt.show()
-#         break
-#     break
-
-
-
-
-image_size = 224
-image_array = cv2.imread(os.path.join(data_directory,"anger", "image0000006.jpg"))
-new_array = cv2.resize(image_array, (image_size, image_size))
-
-plt.imshow(new_array)
-plt.show()
-
+# Tạo danh sách dữ liệu huấn luyện
 training_data = []
 
 def create_training_data():
     for category in classes:
         path = os.path.join(data_directory, category)
+        if not os.path.exists(path):
+            print(f"Warning: Directory '{path}' does not exist.")
+            continue
         class_num = classes.index(category)
         for img in os.listdir(path):
             try:
-                img_array = cv2.imread(os.path.join(path, img))
-                new_array = cv2.resize(img_array, (image_size, image_size))
+                img_path = os.path.join(path, img)
+                img_array = cv2.imread(img_path)
+                if img_array is None:
+                    print(f"Warning: Unable to read image '{img_path}'. Skipping.")
+                    continue
+                # Resize ảnh và chuẩn hóa để tiết kiệm bộ nhớ
+                new_array = cv2.resize(img_array, (image_size, image_size)).astype('float32') / 255.0
                 training_data.append([new_array, class_num])
             except Exception as e:
-                pass
+                print(f"Error: {e} in image '{img_path}'")
+
+# Gọi hàm tạo dữ liệu huấn luyện
+create_training_data()
+
+# Hiển thị số lượng dữ liệu huấn luyện
+print(f"Number of training samples: {len(training_data)}")
+random.shuffle(training_data)
+
+# Tách dữ liệu và nhãn
+X = []
+Y = []
+
+for features, label in training_data:
+    X.append(features)
+    Y.append(label)
+
+# Đổi X thành kiểu float32 để tiết kiệm bộ nhớ
+X = np.array(X, dtype="float32").reshape(-1, image_size, image_size, 3)
+Y = np.array(Y, dtype="int32")
+
+print(f"X shape: {X.shape}, Y shape: {Y.shape}")
