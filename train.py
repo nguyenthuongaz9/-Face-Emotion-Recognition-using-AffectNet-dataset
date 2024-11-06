@@ -45,7 +45,7 @@ model.compile(
 model.summary()
 
 # Sử dụng tf.data.Dataset để load dữ liệu theo batch
-batch_size = 16  # Giảm batch_size để giảm tải bộ nhớ nếu gặp lỗi bộ nhớ
+batch_size = 16
 train_dataset = tf.data.Dataset.from_tensor_slices((X, Y))
 train_dataset = train_dataset.shuffle(buffer_size=1024).batch(batch_size)
 

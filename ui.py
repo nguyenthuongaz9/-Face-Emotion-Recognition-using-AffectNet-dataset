@@ -12,7 +12,7 @@ emotion_labels = ["Angry", "Disgust", "Fear", "Happy", "Sad", "Surprise", "Neutr
 cap = cv2.VideoCapture(0)
 
 # Kích thước ảnh mô hình đầu vào
-image_size = 112  # Kích thước phải khớp với mô hình đã huấn luyện
+image_size = 224  # Kích thước phải khớp với mô hình đã huấn luyện
 
 def preprocess_image(frame):
     # Chuyển ảnh về kích thước cần thiết và chuẩn hóa
