@@ -1,6 +1,7 @@
 import tensorflow as tf
 import numpy as np
 import os
+import cv2
 from data_loader import image_size, classes
 from sklearn.metrics import classification_report, confusion_matrix
 
