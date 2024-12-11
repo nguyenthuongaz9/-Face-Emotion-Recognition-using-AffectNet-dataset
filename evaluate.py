@@ -5,15 +5,11 @@ import cv2
 from data_loader import image_size, classes
 from sklearn.metrics import classification_report, confusion_matrix
 
-# Đường dẫn lưu mô hình
 model_path = "models/emotion_detection_model.h5"
-# Đường dẫn dữ liệu kiểm tra
-test_data_directory = 'data/test/'
+test_data_directory = 'data/train/'
 
-# Load mô hình
 model = tf.keras.models.load_model(model_path)
 
-# Tạo dữ liệu kiểm tra
 test_data = []
 
 def load_test_data():
@@ -35,7 +31,6 @@ def load_test_data():
             except Exception as e:
                 print(f"Error: {e} in image '{img_path}'")
 
-# Load test data
 load_test_data()
 
 X_test = []
@@ -51,11 +46,9 @@ Y_test = np.array(Y_test)
 test_loss, test_accuracy = model.evaluate(X_test, Y_test)
 print(f"Test Accuracy: {test_accuracy * 100:.2f}%")
 
-# Dự đoán và đánh giá chi tiết
 Y_pred = model.predict(X_test)
 Y_pred_classes = np.argmax(Y_pred, axis=1)
 
-# Báo cáo chi tiết và ma trận nhầm lẫn
 print("\nClassification Report:")
 print(classification_report(Y_test, Y_pred_classes, target_names=classes))
 

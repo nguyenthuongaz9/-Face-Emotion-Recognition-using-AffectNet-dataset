@@ -3,26 +3,28 @@ import numpy as np
 import os
 import tensorflow as tf
 import random
+import torch
 
-# Kiểm tra GPU và thiết lập cấu hình bộ nhớ
-gpus = tf.config.experimental.list_physical_devices('GPU')
-if gpus:
-    for gpu in gpus:
-        print(f"Using GPU: {gpu}")
-        tf.config.experimental.set_memory_growth(gpu, True)
+
+
+if torch.cuda.is_available():
+    print("CUDA is available. Using GPU.")
+    gpu_name = torch.cuda.get_device_name(0) 
+    print(f"CUDA is available. Using GPU: {gpu_name}")
+    device = torch.device("cuda") 
 else:
-    print("No GPU found, using CPU.")
+    print("CUDA is not available. Using CPU.")
+    device = torch.device("cpu")  
 
-# Đường dẫn dữ liệu và các nhãn lớp
+
 data_directory = 'data/train/'
 classes = ["anger", "contempt", "disgust", "fear", "happy", "neutral", "sad", "surprise"]
 
-# Giảm kích thước ảnh để tiết kiệm bộ nhớ
-image_size = 122  # Điều chỉnh kích thước ảnh
+image_size = 122  
 
-# Tạo danh sách dữ liệu huấn luyện
 training_data = []
 
+# Tạo dữ liệu huấn luyện
 def create_training_data():
     for category in classes:
         path = os.path.join(data_directory, category)
@@ -43,23 +45,28 @@ def create_training_data():
             except Exception as e:
                 print(f"Error processing image '{img_path}': {e}")
 
-# Gọi hàm tạo dữ liệu huấn luyện
 create_training_data()
 
-# Hiển thị số lượng dữ liệu huấn luyện
-print(f"Number of training samples: {len(training_data)}")
+print(f"Total number of samples: {len(training_data)}")
+
 random.shuffle(training_data)
 
-# Tách dữ liệu và nhãn
-X = []  # Dữ liệu hình ảnh
-Y = []  # Nhãn
+train_ratio = 0.8  
+train_size = int(len(training_data) * train_ratio)
 
-for features, label in training_data:
-    X.append(features)
-    Y.append(label)
+train_data = training_data[:train_size]
+validation_data = training_data[train_size:]
 
-# Chuyển đổi sang numpy array
-X = np.array(X, dtype="float32").reshape(-1, image_size, image_size, 3)
-Y = np.array(Y, dtype="int32")
+def split_features_and_labels(data):
+    X = []
+    Y = []
+    for features, label in data:
+        X.append(features)
+        Y.append(label)
+    return np.array(X, dtype="float32").reshape(-1, image_size, image_size, 3), np.array(Y, dtype="int32")
 
-print(f"X shape: {X.shape}, Y shape: {Y.shape}")
+X_train, Y_train = split_features_and_labels(train_data)
+X_val, Y_val = split_features_and_labels(validation_data)
+
+print(f"Training data: X_train shape: {X_train.shape}, Y_train shape: {Y_train.shape}")
+print(f"Validation data: X_val shape: {X_val.shape}, Y_val shape: {Y_val.shape}")

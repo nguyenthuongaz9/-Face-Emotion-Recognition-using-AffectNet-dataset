@@ -1,13 +1,20 @@
 import tensorflow as tf
 from tensorflow.keras import layers, Model
-from tensorflow.keras.optimizers import Adam
-from tensorflow.keras.callbacks import EarlyStopping, LearningRateScheduler
-from tensorflow.keras.preprocessing.image import ImageDataGenerator
-from sklearn.model_selection import train_test_split
-from data_loader import X, Y, image_size
+from data_loader import X_train, Y_train, image_size, X_val, Y_val
+import torch
+import matplotlib.pyplot as plt
 
 from tensorflow.compat.v1 import ConfigProto
 from tensorflow.compat.v1 import InteractiveSession
+
+if torch.cuda.is_available():
+    print("CUDA is available. Using GPU.")
+    gpu_name = torch.cuda.get_device_name(0) 
+    print(f"CUDA is available. Using GPU: {gpu_name}")
+    device = torch.device("cuda") 
+else:
+    print("CUDA is not available. Using CPU.")
+    device = torch.device("cpu")  
 
 config = ConfigProto()
 config.gpu_options.allow_growth = True
@@ -19,7 +26,7 @@ base_model = tf.keras.applications.MobileNetV2(
     input_shape=(image_size, image_size, 3)
 )
 
-for layer in base_model.layers[:-30]:  
+for layer in base_model.layers:
     layer.trainable = False
 
 base_input = base_model.input
@@ -31,59 +38,48 @@ x = layers.Dense(128, activation='relu')(x)
 x = layers.BatchNormalization()(x)
 x = layers.Dropout(0.3)(x)
 x = layers.Dense(64, activation='relu')(x)
-x = layers.BatchNormalization()(x)
-x = layers.Dropout(0.3)(x)
-final_output = layers.Dense(8, activation='softmax')(x) 
+final_output = layers.Dense(8, activation='softmax')(x)  
 
 model = Model(inputs=base_input, outputs=final_output)
 
-optimizer = Adam(learning_rate=0.001, decay=1e-5)
+
 model.compile(
     optimizer=optimizer,
     loss="sparse_categorical_crossentropy",
     metrics=["accuracy"]
 )
 
+
 model.summary()
 
-X_train, X_val, Y_train, Y_val = train_test_split(X, Y, test_size=0.2, random_state=42)
+batch_size = 16
+train_dataset = tf.data.Dataset.from_tensor_slices((X_train, Y_train))
+train_dataset = train_dataset.shuffle(buffer_size=1024).batch(batch_size)
 
-train_datagen = ImageDataGenerator(
-    rotation_range=20,
-    width_shift_range=0.2,
-    height_shift_range=0.2,
-    shear_range=0.2,
-    zoom_range=0.2,
-    horizontal_flip=True,
-    fill_mode='nearest'
-)
+val_dataset = tf.data.Dataset.from_tensor_slices((X_val, Y_val))
+val_dataset = val_dataset.batch(batch_size)
 
-val_datagen = ImageDataGenerator()
-
-train_dataset = train_datagen.flow(X_train, Y_train, batch_size=16)
-val_dataset = val_datagen.flow(X_val, Y_val, batch_size=16)
-
-early_stopping = EarlyStopping(
-    monitor='val_loss', 
-    patience=5, 
-    restore_best_weights=True
-)
-
-def scheduler(epoch, lr):
-    if epoch < 10:
-        return lr
-    else:
-        return lr * tf.math.exp(-0.1)
-
-
-lr_scheduler = LearningRateScheduler(scheduler)
-
-model.fit(
+history = model.fit(
     train_dataset,
-    validation_data=val_dataset,
-    epochs=25,
-    callbacks=[early_stopping, lr_scheduler]
+    validation_data=val_dataset,  
+    epochs=20
 )
 
+model.save("models/emotion_detection_model_2.h5")
 
-model.save("models/emotion_detection_model_optimized.h5")
+
+plt.plot(history.history['loss'], label='Training Loss')
+plt.plot(history.history['val_loss'], label='Validation Loss')
+plt.xlabel('Epoch')
+plt.ylabel('Loss')
+plt.title('Training and Validation Loss')
+plt.legend()
+plt.show()
+
+plt.plot(history.history['accuracy'], label='Training Accuracy')
+plt.plot(history.history['val_accuracy'], label='Validation Accuracy')
+plt.xlabel('Epoch')
+plt.ylabel('Accuracy')
+plt.title('Training and Validation Accuracy')
+plt.legend()
+plt.show()
