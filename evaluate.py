@@ -38,7 +38,6 @@ def load_test_data():
 # Load test data
 load_test_data()
 
-# Chuẩn bị dữ liệu và nhãn cho kiểm tra
 X_test = []
 Y_test = []
 
@@ -49,7 +48,6 @@ for features, label in test_data:
 X_test = np.array(X_test).reshape(-1, image_size, image_size, 3) / 255.0
 Y_test = np.array(Y_test)
 
-# Đánh giá mô hình trên tập kiểm tra
 test_loss, test_accuracy = model.evaluate(X_test, Y_test)
 print(f"Test Accuracy: {test_accuracy * 100:.2f}%")
 

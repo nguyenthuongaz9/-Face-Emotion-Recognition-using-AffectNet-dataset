@@ -6,7 +6,7 @@ from data_loader import image_size, classes
 import os
 
 
-model_path = "models/emotion_detection_model.h5"
+model_path = "models/emotion_detection_model_2.h5"
 
 # Load mô hình
 model = tf.keras.models.load_model(model_path)

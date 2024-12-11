@@ -5,14 +5,15 @@ import tensorflow as tf
 # Tải mô hình đã huấn luyện
 model = tf.keras.models.load_model("models/emotion_detection_model.h5")
 
+# Kiểm tra kích thước đầu vào của mô hình
+input_shape = model.input_shape[1:3]
+image_size = input_shape[0]  # Đảm bảo rằng image_size khớp với mô hình
+
 # Đặt nhãn cảm xúc tương ứng với các lớp
 emotion_labels = ["Angry", "Disgust", "Fear", "Happy", "Sad", "Surprise", "Neutral", "Contempt"]
 
 # Khởi động webcam
 cap = cv2.VideoCapture(0)
-
-# Kích thước ảnh mô hình đầu vào
-image_size = 224  # Kích thước phải khớp với mô hình đã huấn luyện
 
 def preprocess_image(frame):
     # Chuyển ảnh về kích thước cần thiết và chuẩn hóa
