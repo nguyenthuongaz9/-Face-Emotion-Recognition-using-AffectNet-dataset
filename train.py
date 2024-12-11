@@ -1,56 +1,82 @@
 import tensorflow as tf
 from tensorflow.keras import layers, Model
-from data_loader import X, Y, image_size  # Giả sử X, Y và image_size được định nghĩa trong main.py
+from data_loader import X_train, Y_train, image_size, X_val, Y_val
+import torch
+import matplotlib.pyplot as plt
 
-# Cấu hình TensorFlow để cho phép tăng dần bộ nhớ GPU
 from tensorflow.compat.v1 import ConfigProto
 from tensorflow.compat.v1 import InteractiveSession
+
+if torch.cuda.is_available():
+    print("CUDA is available. Using GPU.")
+    gpu_name = torch.cuda.get_device_name(0) 
+    print(f"CUDA is available. Using GPU: {gpu_name}")
+    device = torch.device("cuda") 
+else:
+    print("CUDA is not available. Using CPU.")
+    device = torch.device("cpu")  
 
 config = ConfigProto()
 config.gpu_options.allow_growth = True
 session = InteractiveSession(config=config)
 
-# Tải mô hình MobileNetV2 với trọng số đã được huấn luyện
 base_model = tf.keras.applications.MobileNetV2(
     include_top=False, 
     weights="imagenet", 
     input_shape=(image_size, image_size, 3)
 )
 
-# Đóng băng các lớp của mô hình gốc để tránh huấn luyện lại
 for layer in base_model.layers:
     layer.trainable = False
 
-# Định nghĩa đầu vào và đầu ra của mô hình
 base_input = base_model.input
 base_output = base_model.output
 
-# Thêm các lớp pooling và dense tùy chỉnh
 x = layers.GlobalAveragePooling2D()(base_output)
 x = layers.Dense(128, activation='relu')(x)
 x = layers.Dense(64, activation='relu')(x)
-final_output = layers.Dense(8, activation='softmax')(x)  # Lớp đầu ra với 8 lớp cảm xúc
+final_output = layers.Dense(8, activation='softmax')(x)  
 
-# Tạo mô hình hoàn chỉnh
 model = Model(inputs=base_input, outputs=final_output)
 
-# Biên dịch mô hình với các tham số
+
 model.compile(
     loss="sparse_categorical_crossentropy", 
     optimizer="adam", 
     metrics=["accuracy"]
 )
 
-# In ra tóm tắt mô hình
+
 model.summary()
 
-# Sử dụng tf.data.Dataset để load dữ liệu theo batch
 batch_size = 16
-train_dataset = tf.data.Dataset.from_tensor_slices((X, Y))
+train_dataset = tf.data.Dataset.from_tensor_slices((X_train, Y_train))
 train_dataset = train_dataset.shuffle(buffer_size=1024).batch(batch_size)
 
-# Huấn luyện mô hình
-model.fit(train_dataset, epochs=25)
+val_dataset = tf.data.Dataset.from_tensor_slices((X_val, Y_val))
+val_dataset = val_dataset.batch(batch_size)
 
-# Lưu mô hình đã huấn luyện
-model.save("models/emotion_detection_model.h5")
+history = model.fit(
+    train_dataset,
+    validation_data=val_dataset,  
+    epochs=20
+)
+
+model.save("models/emotion_detection_model_2.h5")
+
+
+plt.plot(history.history['loss'], label='Training Loss')
+plt.plot(history.history['val_loss'], label='Validation Loss')
+plt.xlabel('Epoch')
+plt.ylabel('Loss')
+plt.title('Training and Validation Loss')
+plt.legend()
+plt.show()
+
+plt.plot(history.history['accuracy'], label='Training Accuracy')
+plt.plot(history.history['val_accuracy'], label='Validation Accuracy')
+plt.xlabel('Epoch')
+plt.ylabel('Accuracy')
+plt.title('Training and Validation Accuracy')
+plt.legend()
+plt.show()
