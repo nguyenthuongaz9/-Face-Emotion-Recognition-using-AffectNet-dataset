@@ -5,8 +5,8 @@ import cv2
 from data_loader import image_size, classes
 from sklearn.metrics import classification_report, confusion_matrix
 
-model_path = "models/emotion_detection_model.h5"
-test_data_directory = 'data/train/'
+model_path = "models/emotion_detection_model_4.h5"
+test_data_directory = 'data/test/'
 
 model = tf.keras.models.load_model(model_path)
 

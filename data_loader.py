@@ -3,18 +3,18 @@ import numpy as np
 import os
 import tensorflow as tf
 import random
-import torch
+# import torch
 
 
 
-if torch.cuda.is_available():
-    print("CUDA is available. Using GPU.")
-    gpu_name = torch.cuda.get_device_name(0) 
-    print(f"CUDA is available. Using GPU: {gpu_name}")
-    device = torch.device("cuda") 
-else:
-    print("CUDA is not available. Using CPU.")
-    device = torch.device("cpu")  
+# if torch.cuda.is_available():
+#     print("CUDA is available. Using GPU.")
+#     gpu_name = torch.cuda.get_device_name(0) 
+#     print(f"CUDA is available. Using GPU: {gpu_name}")
+#     device = torch.device("cuda") 
+# else:
+#     print("CUDA is not available. Using CPU.")
+#     device = torch.device("cpu")  
 
 
 data_directory = 'data/train/'

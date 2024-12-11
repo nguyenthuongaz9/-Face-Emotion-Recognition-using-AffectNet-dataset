@@ -1,20 +1,20 @@
 import tensorflow as tf
 from tensorflow.keras import layers, Model
 from data_loader import X_train, Y_train, image_size, X_val, Y_val
-import torch
+# import torch
 import matplotlib.pyplot as plt
 
 from tensorflow.compat.v1 import ConfigProto
 from tensorflow.compat.v1 import InteractiveSession
 
-if torch.cuda.is_available():
-    print("CUDA is available. Using GPU.")
-    gpu_name = torch.cuda.get_device_name(0) 
-    print(f"CUDA is available. Using GPU: {gpu_name}")
-    device = torch.device("cuda") 
-else:
-    print("CUDA is not available. Using CPU.")
-    device = torch.device("cpu")  
+# if torch.cuda.is_available():
+#     print("CUDA is available. Using GPU.")
+#     gpu_name = torch.cuda.get_device_name(0) 
+#     print(f"CUDA is available. Using GPU: {gpu_name}")
+#     device = torch.device("cuda") 
+# else:
+#     print("CUDA is not available. Using CPU.")
+#     device = torch.device("cpu")  
 
 config = ConfigProto()
 config.gpu_options.allow_growth = True
@@ -34,17 +34,17 @@ base_output = base_model.output
 
 x = layers.GlobalAveragePooling2D()(base_output)
 x = layers.BatchNormalization()(x)
-x = layers.Dense(128, activation='relu')(x)
+x = layers.Dense(512, activation='relu')(x)
 x = layers.BatchNormalization()(x)
 x = layers.Dropout(0.3)(x)
-x = layers.Dense(64, activation='relu')(x)
+x = layers.Dense(256, activation='relu')(x)
 final_output = layers.Dense(8, activation='softmax')(x)  
 
 model = Model(inputs=base_input, outputs=final_output)
 
 
 model.compile(
-    optimizer=optimizer,
+    optimizer="adam",
     loss="sparse_categorical_crossentropy",
     metrics=["accuracy"]
 )
@@ -52,7 +52,7 @@ model.compile(
 
 model.summary()
 
-batch_size = 16
+batch_size = 128
 train_dataset = tf.data.Dataset.from_tensor_slices((X_train, Y_train))
 train_dataset = train_dataset.shuffle(buffer_size=1024).batch(batch_size)
 
@@ -62,10 +62,10 @@ val_dataset = val_dataset.batch(batch_size)
 history = model.fit(
     train_dataset,
     validation_data=val_dataset,  
-    epochs=20
+    epochs=30
 )
 
-model.save("models/emotion_detection_model_2.h5")
+model.save("models/emotion_detection_model_4.h5")
 
 
 plt.plot(history.history['loss'], label='Training Loss')

@@ -8,7 +8,7 @@ import os
 image_size = 122
 classes = ["anger", "contempt", "disgust", "fear", "happy", "neutral", "sad", "surprise"]
 
-model_path = "models/emotion_detection_model_2.h5"
+model_path = "models/emotion_detection_model_4.h5"
 
 model = tf.keras.models.load_model(model_path)
 
@@ -32,4 +32,4 @@ def predict_emotion(image_path):
     print(f"Predicted Emotion: {emotion_label}")
 
 if __name__ == "__main__":
-        predict_emotion(os.path.join("3.jpg"))
+        predict_emotion(os.path.join("1.jpg"))
