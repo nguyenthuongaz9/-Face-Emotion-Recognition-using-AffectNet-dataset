@@ -1,8 +1,10 @@
 import tensorflow as tf
 import numpy as np
 import os
+import sys
 import cv2
-from data_loader import image_size, classes
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from data_loader.data_loader import image_size, classes
 from sklearn.metrics import classification_report, confusion_matrix
 
 model_path = "models/emotion_detection_model_4.h5"

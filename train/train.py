@@ -1,8 +1,12 @@
 import tensorflow as tf
 from tensorflow.keras import layers, Model
-from data_loader import X_train, Y_train, image_size, X_val, Y_val
-# import torch
+import sys
+import os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from data_loader.data_loader import X_train, Y_train, image_size, X_val, Y_val
 import matplotlib.pyplot as plt
+import numpy as np
+from sklearn.utils.class_weight import compute_class_weight
 
 from tensorflow.compat.v1 import ConfigProto
 from tensorflow.compat.v1 import InteractiveSession
@@ -46,7 +50,8 @@ model = Model(inputs=base_input, outputs=final_output)
 model.compile(
     optimizer="adam",
     loss="sparse_categorical_crossentropy",
-    metrics=["accuracy"]
+    metrics=["accuracy"],
+
 )
 
 
@@ -59,10 +64,17 @@ train_dataset = train_dataset.shuffle(buffer_size=1024).batch(batch_size)
 val_dataset = tf.data.Dataset.from_tensor_slices((X_val, Y_val))
 val_dataset = val_dataset.batch(batch_size)
 
+
+labels = np.concatenate([y.numpy() for _, y in train_dataset])
+
+class_weights = compute_class_weight('balanced', classes=np.unique(labels), y=labels)
+class_weight_dict = {i: weight for i, weight in enumerate(class_weights)}
+
 history = model.fit(
     train_dataset,
     validation_data=val_dataset,  
-    epochs=30
+    epochs=30,
+    class_weights = class_weight_dict
 )
 
 model.save("models/emotion_detection_model_4.h5")
@@ -82,4 +94,12 @@ plt.xlabel('Epoch')
 plt.ylabel('Accuracy')
 plt.title('Training and Validation Accuracy')
 plt.legend()
+plt.show()
+
+
+unique, counts = np.unique(labels, return_counts=True)
+plt.bar(unique, counts)
+plt.xlabel("Class")
+plt.ylabel("Number of Samples")
+plt.title("Class Distribution in AffectNet Dataset")
 plt.show()
